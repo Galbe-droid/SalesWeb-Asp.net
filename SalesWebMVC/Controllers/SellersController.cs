@@ -21,17 +21,17 @@ namespace SalesWebMVC.Controllers
             _departmentService = departmentService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var list = _sellerService.FindAllAsync(); 
+            var list = await _sellerService.FindAllAsync(); 
 
             return View(list);
         }
 
         //GET
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            var departments = _departmentService.FindAllAsync();
+            var departments = await _departmentService.FindAllAsync();
             var viewModel = new SellerFromViewModel { Departments = departments};
             return View(viewModel);
         }
@@ -40,25 +40,25 @@ namespace SalesWebMVC.Controllers
         //POST
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Sellers seller)
+        public async Task<IActionResult> Create(Sellers seller)
         {
             if (!ModelState.IsValid)
             {
-                var departments = _departmentService.FindAllAsync();
+                var departments = await _departmentService.FindAllAsync();
                 var viewModel = new SellerFromViewModel { Seller = seller, Departments = departments };
                 return View(viewModel);
             }
-            _sellerService.InsertAsync(seller);
+            await _sellerService.InsertAsync(seller);
             return RedirectToAction(nameof(Index));
         }
 
         //GET
-        public IActionResult Delete(int? id)
+        public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
                 return RedirectToAction(nameof(Error), new { Message = "Id not provided"});
 
-            var obj = _sellerService.FindByIdAsync(id.Value);
+            var obj = await _sellerService.FindByIdAsync(id.Value);
 
             if (obj == null)
                 return RedirectToAction(nameof(Error), new { Message = "Id not found" });
@@ -70,18 +70,25 @@ namespace SalesWebMVC.Controllers
         //POST
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            _sellerService.RemoveAsync(id);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _sellerService.RemoveAsync(id);
+                return RedirectToAction(nameof(Index));
+            }
+            catch(IntegrityException e)
+            {
+                return RedirectToAction(nameof(Error), new { message = e.Message });
+            }
         }
 
-        public IActionResult Detail(int? id)
+        public async Task<IActionResult> Detail(int? id)
         {
             if (id == null)
                 return RedirectToAction(nameof(Error), new { Message = "Id not provided" });
 
-            var obj = _sellerService.FindByIdAsync(id.Value);
+            var obj = await _sellerService.FindByIdAsync(id.Value);
 
             if (obj == null)
                 return RedirectToAction(nameof(Error), new { Message = "Id not found" });
@@ -89,17 +96,17 @@ namespace SalesWebMVC.Controllers
             return View(obj);
         }
 
-        public IActionResult Edit(int? id)
+        public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
                 return RedirectToAction(nameof(Error), new { Message = "Id not provided" });
 
-            var obj = _sellerService.FindByIdAsync(id.Value);
+            var obj = await _sellerService.FindByIdAsync(id.Value);
 
             if (obj == null)
                 return RedirectToAction(nameof(Error), new { Message = "Id not found" });
 
-            List<Department> departments = _departmentService.FindAllAsync();
+            List<Department> departments = await _departmentService.FindAllAsync();
             SellerFromViewModel viewModel = new SellerFromViewModel { Seller = obj, Departments = departments };
 
             return View(viewModel);
@@ -108,11 +115,11 @@ namespace SalesWebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, Sellers seller)
+        public async Task<IActionResult> Edit(int id, Sellers seller)
         {
             if (!ModelState.IsValid)
             {
-                var departments = _departmentService.FindAllAsync();
+                var departments = await _departmentService.FindAllAsync();
                 var viewModel = new SellerFromViewModel { Seller = seller ,Departments = departments };
                 return View(viewModel);
             }
@@ -122,7 +129,7 @@ namespace SalesWebMVC.Controllers
             }
             try
             {
-                _sellerService.UpdateAsync(seller);
+                await _sellerService.UpdateAsync(seller);
                 return RedirectToAction(nameof(Index));
             }
             catch(ApplicationException e)
